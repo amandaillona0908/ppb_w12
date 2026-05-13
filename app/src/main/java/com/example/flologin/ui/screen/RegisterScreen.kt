@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Visibility
@@ -28,17 +29,22 @@ private val SuccessGreen = Color(0xFF2E7D32)
 private val ErrorRed = Color(0xFFC62828)
 
 @Composable
-fun LoginScreen(
+fun RegisterScreen(
     viewModel: LoginViewModel,
-    onNavigateToRegister: () -> Unit
+    onNavigateToLogin: () -> Unit
 ) {
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
 
     val isLoading = viewModel.isLoading
-    val loginState = viewModel.loginState
-    val isFormValid = username.isNotBlank() && password.isNotBlank()
+    val registerState = viewModel.registerState
+
+    val passwordMatch = password == confirmPassword
+    val isFormValid = username.length >= 3 &&
+            password.length >= 5 &&
+            passwordMatch
 
     Box(
         modifier = Modifier
@@ -56,17 +62,30 @@ fun LoginScreen(
                 modifier = Modifier.fillMaxWidth().padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text("User Login", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = PurplePrimary)
-                Spacer(Modifier.height(4.dp))
-                Text("Silakan masuk ke akun Anda", fontSize = 13.sp, color = Color.Gray)
-                Spacer(Modifier.height(24.dp))
+                // Back button + title
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = onNavigateToLogin, enabled = !isLoading) {
+                        Icon(Icons.Filled.ArrowBack, "Kembali", tint = PurplePrimary)
+                    }
+                    Spacer(Modifier.weight(1f))
+                    Text("Daftar Akun", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = PurplePrimary)
+                    Spacer(Modifier.weight(1.2f))
+                }
+
+                Spacer(Modifier.height(8.dp))
+                Text("Buat akun baru untuk login", fontSize = 13.sp, color = Color.Gray)
+                Spacer(Modifier.height(20.dp))
 
                 OutlinedTextField(
                     value = username,
                     onValueChange = { username = it },
-                    label = { Text("Username") },
+                    label = { Text("Username (min. 3 karakter)") },
                     leadingIcon = { Icon(Icons.Filled.Person, null) },
                     singleLine = true,
+                    isError = username.isNotEmpty() && username.length < 3,
                     enabled = !isLoading,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
@@ -82,18 +101,16 @@ fun LoginScreen(
                 OutlinedTextField(
                     value = password,
                     onValueChange = { password = it },
-                    label = { Text("Password") },
+                    label = { Text("Password (min. 5 karakter)") },
                     leadingIcon = { Icon(Icons.Filled.Lock, null) },
                     trailingIcon = {
                         IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                            Icon(
-                                if (passwordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
-                                null
-                            )
+                            Icon(if (passwordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility, null)
                         }
                     },
                     visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     singleLine = true,
+                    isError = password.isNotEmpty() && password.length < 5,
                     enabled = !isLoading,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
@@ -104,10 +121,35 @@ fun LoginScreen(
                     )
                 )
 
-                Spacer(Modifier.height(24.dp))
+                Spacer(Modifier.height(12.dp))
+
+                OutlinedTextField(
+                    value = confirmPassword,
+                    onValueChange = { confirmPassword = it },
+                    label = { Text("Konfirmasi Password") },
+                    leadingIcon = { Icon(Icons.Filled.Lock, null) },
+                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    singleLine = true,
+                    isError = confirmPassword.isNotEmpty() && !passwordMatch,
+                    supportingText = {
+                        if (confirmPassword.isNotEmpty() && !passwordMatch) {
+                            Text("Password tidak cocok", color = ErrorRed, fontSize = 12.sp)
+                        }
+                    },
+                    enabled = !isLoading,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = PurplePrimary,
+                        focusedLabelColor = PurplePrimary,
+                        focusedLeadingIconColor = PurplePrimary
+                    )
+                )
+
+                Spacer(Modifier.height(20.dp))
 
                 Button(
-                    onClick = { viewModel.login(username, password) },
+                    onClick = { viewModel.register(username, password) },
                     enabled = isFormValid && !isLoading,
                     modifier = Modifier.fillMaxWidth().height(50.dp),
                     shape = RoundedCornerShape(12.dp),
@@ -116,13 +158,13 @@ fun LoginScreen(
                     if (isLoading) {
                         CircularProgressIndicator(Modifier.size(22.dp), color = Color.White, strokeWidth = 2.dp)
                     } else {
-                        Text("LOGIN", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        Text("DAFTAR", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                     }
                 }
 
-                if (loginState.isNotEmpty()) {
+                if (registerState.isNotEmpty()) {
                     Spacer(Modifier.height(16.dp))
-                    val isSuccess = loginState == "Login Berhasil"
+                    val isSuccess = registerState.contains("Berhasil")
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(8.dp),
@@ -131,7 +173,7 @@ fun LoginScreen(
                         )
                     ) {
                         Text(
-                            loginState,
+                            registerState,
                             modifier = Modifier.padding(12.dp),
                             color = if (isSuccess) SuccessGreen else ErrorRed,
                             fontWeight = FontWeight.Medium,
@@ -140,19 +182,16 @@ fun LoginScreen(
                     }
                 }
 
-                Spacer(Modifier.height(20.dp))
+                Spacer(Modifier.height(16.dp))
 
-                // Link ke Register
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("Belum punya akun? ", fontSize = 13.sp, color = Color.Gray)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Sudah punya akun? ", fontSize = 13.sp, color = Color.Gray)
                     Text(
-                        "Daftar di sini",
+                        "Login di sini",
                         fontSize = 13.sp,
                         color = PurplePrimary,
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier.clickable(enabled = !isLoading) { onNavigateToRegister() }
+                        modifier = Modifier.clickable(enabled = !isLoading) { onNavigateToLogin() }
                     )
                 }
             }

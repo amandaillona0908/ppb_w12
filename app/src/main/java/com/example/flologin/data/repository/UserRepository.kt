@@ -7,14 +7,15 @@ class UserRepository(
     private val dao: UserDao
 ) {
 
-    suspend fun insert(user: User) {
-        dao.insert(user)
+    suspend fun insert(user: User): Long {
+        return dao.insert(user)
     }
 
-    suspend fun login(
-        username: String,
-        password: String
-    ): User? {
+    suspend fun login(username: String, password: String): User? {
         return dao.login(username, password)
+    }
+
+    suspend fun isUsernameTaken(username: String): Boolean {
+        return dao.findByUsername(username) != null
     }
 }

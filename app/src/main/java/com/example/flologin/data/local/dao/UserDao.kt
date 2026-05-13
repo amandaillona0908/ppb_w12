@@ -10,11 +10,11 @@ import com.example.flologin.data.local.entity.User
 interface UserDao {
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun insert(user: User)
+    suspend fun insert(user: User): Long   // return -1 kalau gagal (duplikat)
 
     @Query("SELECT * FROM users WHERE username = :username AND password = :password")
-    suspend fun login(
-        username: String,
-        password: String
-    ): User?
+    suspend fun login(username: String, password: String): User?
+
+    @Query("SELECT * FROM users WHERE username = :username")
+    suspend fun findByUsername(username: String): User?
 }

@@ -17,22 +17,61 @@ class LoginViewModel(
     var loginState by mutableStateOf("")
         private set
 
+    var registerState by mutableStateOf("")
+        private set
+
     var isLoading by mutableStateOf(false)
+        private set
+
+    // Username yang sedang login (untuk welcome screen)
+    var loggedInUser by mutableStateOf<String?>(null)
         private set
 
     fun login(username: String, password: String) {
         viewModelScope.launch {
             isLoading = true
             loginState = ""
-            delay(800) // delay biar loading-nya keliatan (Room kecepetan)
+            delay(600)
             val user = repository.login(username, password)
-            loginState = if (user != null) {
-                "Login Berhasil"
+            if (user != null) {
+                loggedInUser = user.username
+                loginState = "Login Berhasil"
             } else {
-                "Username atau Password Salah"
+                loginState = "Username atau Password Salah"
             }
             isLoading = false
         }
+    }
+
+    fun register(username: String, password: String) {
+        viewModelScope.launch {
+            isLoading = true
+            registerState = ""
+            delay(600)
+
+            if (repository.isUsernameTaken(username)) {
+                registerState = "Username sudah dipakai"
+            } else {
+                val result = repository.insert(
+                    User(username = username, password = password)
+                )
+                registerState = if (result != -1L) {
+                    "Pendaftaran Berhasil! Silakan login."
+                } else {
+                    "Pendaftaran Gagal"
+                }
+            }
+            isLoading = false
+        }
+    }
+
+    fun logout() {
+        loggedInUser = null
+        loginState = ""
+    }
+
+    fun resetRegisterState() {
+        registerState = ""
     }
 
     fun insertDummyUser() {

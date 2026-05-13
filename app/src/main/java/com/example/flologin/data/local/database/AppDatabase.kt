@@ -7,12 +7,8 @@ import androidx.room.RoomDatabase
 import com.example.flologin.data.local.dao.UserDao
 import com.example.flologin.data.local.entity.User
 
-@Database(
-    entities = [User::class],
-    version = 1
-)
+@Database(entities = [User::class], version = 2)
 abstract class AppDatabase : RoomDatabase() {
-
     abstract fun userDao(): UserDao
 
     companion object {
@@ -25,7 +21,9 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "login_db"
-                ).fallbackToDestructiveMigration().build()
+                )
+                    .fallbackToDestructiveMigration()
+                    .build()
                 INSTANCE = instance
                 instance
             }
